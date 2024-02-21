@@ -23,6 +23,8 @@ enum errs {
 	NOT_YET_IMP
 };
 
+/* TODO
+   Add 2 hitsplat scythe */
 enum wep_type {
 	REGULAR,
 	FANG,
@@ -88,6 +90,8 @@ int main(int argc, char **argv)
 
 /* Populates a ttk array using dynamic programming,
    with ttk and best weapon at each hp. */
+/* TODO
+   Add an argument "goal" and make it calculate hp -> goal instead of hp -> 0 */
 int ttk_comp(int wepc, struct weapon *wepv, int hp)
 {
 	int i, j, best_wep;
@@ -135,6 +139,8 @@ int ttk_comp(int wepc, struct weapon *wepv, int hp)
 
 /* Returns the expected ticks to kill given a weapon,
    hp value, and a ttk_array populated up to hp - 1. */
+/* TODO
+   Add an argument "goal" and make it calculate hp -> goal instead of hp -> 0 */
 double ttk_calc(struct weapon *wep, double *ttk_array, int hp)
 {
 	int i, ruby_dmg, type, spd = wep->spd;
@@ -189,6 +195,8 @@ double ttk_calc(struct weapon *wep, double *ttk_array, int hp)
 }
 
 /* Initializes a weapon struct with the given info. */
+/* TODO
+   Add 2 hitsplat scythe */
 int wep_init(struct weapon *wep, char *name, int spd, int max, double acc, int type)
 {
 	int i, j, k, fang_off, max2, max3;
