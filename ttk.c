@@ -14,7 +14,7 @@
    is taken into account regardless.
    Useful for target-switching situations
    like nylocas waves. */
-#define KILL_TYPE (0)
+#define KILL_TYPE (1)
 
 enum errs {
 	SUCCESS,
@@ -23,12 +23,11 @@ enum errs {
 	NOT_YET_IMP
 };
 
-/* TODO
-   Add 2 hitsplat scythe */
 enum wep_type {
 	REGULAR,
 	FANG,
 	SCYTHE,
+	SCYTHE_2H,
 	KERIS,
 	ZCB_DIAM_KAND,
 	RCB_DIAM_KAND,
@@ -58,25 +57,32 @@ int main(int argc, char **argv)
 	int errno;
 	struct weapon test[2];
 
-	/*
-	errno = wep_init(test, "RCB w/ruby + no kand", 5, 34, 0.5091, RCB_RUBY_NOKA); // 0.5091
+	errno = wep_init(test, "4-way mage sang", 4, 42, .9608, REGULAR);
 	if (errno) {
 		printf("ERROR: Failed to initialize weapon 1: %d.\n", __LINE__);
 		return errno;
 	}
 
-	errno = wep_init(test + 1, "RCB w/diam + no kand", 5, 35, 0.5091, RCB_DIAM_NOKA);
+	/*
+	errno = wep_init(test, "Max melee scy (2 hitsplats)", 5, 50, .9724, SCYTHE_2H);
 	if (errno) {
 		printf("ERROR: Failed to initialize weapon 1: %d.\n", __LINE__);
 		return errno;
 	}
+
+	errno = wep_init(test + 1, "Max melee swift", 3, 34, .9524, REGULAR);
+	if (errno) {
+		printf("ERROR: Failed to initialize weapon 2: %d.\n", __LINE__);
+		return errno;
+	}
+	*/
 
 	// print_wep(test);
 	// print_wep(test + 1);
-	ttk_comp(2, test, 350);
-	*/
+	ttk_comp(1, test, 22);
 
-	errno = wep_init(test, "Twisted Bow", 5, 88, 0.6109, REGULAR); // 0.4779
+	/*
+	errno = wep_init(test, "Twisted Bow", 5, 88, 0.626, REGULAR); // 0.4779
 	if (errno) {
 		printf("ERROR: Failed to initialize weapon 1: %d.\n", __LINE__);
 		return errno;
@@ -84,6 +90,7 @@ int main(int argc, char **argv)
 
 	// print_wep(test);
 	ttk_comp(1, test, 1350);
+	*/
 
 	return SUCCESS;
 }
@@ -184,6 +191,9 @@ double ttk_calc(struct weapon *wep, double *ttk_array, int hp)
 		rv += wep->dist[i] * (spd + ttk_array[hp - i]);
 	}
 
+	/* Print the chance to kill. */
+	printf("Chance to kill with '%s' at %d HP - %.2f\n", wep->name, hp, rem);
+
 	/* For damage values that do kill the boss, we add them
 	   only for kill type 1, and not for kill type 0. */
 	if (KILL_TYPE)
@@ -195,8 +205,6 @@ double ttk_calc(struct weapon *wep, double *ttk_array, int hp)
 }
 
 /* Initializes a weapon struct with the given info. */
-/* TODO
-   Add 2 hitsplat scythe */
 int wep_init(struct weapon *wep, char *name, int spd, int max, double acc, int type)
 {
 	int i, j, k, fang_off, max2, max3;
@@ -344,6 +352,41 @@ int wep_init(struct weapon *wep, char *name, int spd, int max, double acc, int t
 
 		/* Finally, the case where all hits miss. */
 		wep->dist[0] += p_miss1 * p_miss2;
+
+	} else if (type == SCYTHE_2H) {
+		/* Two hitsplat scythe is just the three hitsplat version
+		   without the third hit. */
+		max2 = max / 2;
+
+		p_miss1 = (1 - acc);
+
+		p_unif = acc / (max + 1);
+		p_unif2 = acc / (max2 + 1);
+
+		/* There are 4 possibilities, corresponding to which
+		   hitsplats miss. We need a case for each one. Because this
+		   process is additive, set all elements to 0. */
+		for (i = 0; i < DIST_SIZE; i++)
+			wep->dist[i] = 0.0;
+
+		/* Assume both hits land. */
+		p_net = p_unif * p_unif2;
+		for (i = 0; i < max + 1; i++) {
+			for (j = 0; j < max2 + 1; j++)
+				wep->dist[i + j] += p_net;
+		}
+
+		/* Now assume one hit lands, but the other one misses. */
+		p_net = p_miss1 * p_unif;
+		for (i = 0; i < max + 1; i++)
+			wep->dist[i] += p_net;
+
+		p_net = p_miss1 * p_unif2;
+		for (j = 0; j < max2 + 1; j++)
+			wep->dist[j] += p_net;
+
+		/* Finally, the case where both miss. */
+		wep->dist[0] += p_miss1 * p_miss1;
 
 	} else if (type == KERIS) {
 		/* Keris distributions are the sum of the
